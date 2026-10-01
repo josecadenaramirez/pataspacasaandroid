@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">PatasPaCasa</string>
+    <string name="app_name">Patas pa\' Casa</string>
+    <string name="default_web_client_id">TODO_REPLACE_WITH_FIREBASE_WEB_CLIENT_ID</string>
 </resources>
