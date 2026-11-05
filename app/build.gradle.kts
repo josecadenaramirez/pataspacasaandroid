@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.cadena.pataspacasa"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.cadena.pataspacasa"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -23,12 +23,22 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "APP_ENVIRONMENT", "\"QA\"")
+        }
+        create("qa") {
+            initWith(getByName("debug"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("debug")
+            buildConfigField("String", "APP_ENVIRONMENT", "\"QA\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "APP_ENVIRONMENT", "\"PROD\"")
         }
     }
     compileOptions {
@@ -40,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
