@@ -2,6 +2,7 @@ package com.cadena.pataspacasa.data.mapper
 
 import com.cadena.pataspacasa.data.dto.PetDTO
 import com.cadena.pataspacasa.domain.entity.Pet
+import com.cadena.pataspacasa.domain.entity.PetCalendarDate
 import com.cadena.pataspacasa.domain.entity.PetSpecies
 import com.cadena.pataspacasa.domain.entity.PetStatus
 import com.cadena.pataspacasa.domain.entity.PlanType
@@ -19,15 +20,27 @@ object PetMapper {
         name = dto.name,
         species = PetSpecies.from(dto.species),
         breed = dto.breed ?: "",
+        petType = dto.petType ?: dto.species ?: "dog",
+        customPetType = dto.customPetType,
+        customBreed = dto.customBreed,
+        approxBirthDate = dto.approxBirthDate?.let { PetCalendarDate.fromApiValue(it) },
+        sex = dto.sex,
+        sterilized = dto.sterilized,
         age = dto.age,
         photoUrl = dto.photoUrl,
         notes = dto.notes,
         allergies = dto.allergies,
         treatment = dto.treatment,
         ownerName = dto.ownerName,
+        ownerEmail = dto.ownerEmail,
         phones = dto.phones ?: emptyList(),
+        address = dto.address,
         status = statusFrom(dto.status, dto.lostMode),
+        lostMode = dto.lostMode ?: false,
         tagId = dto.tagId,
+        activationStatus = dto.activationStatus,
+        nfcProgrammed = dto.nfcProgrammed,
+        nfcProgrammedAt = dto.nfcProgrammedAt?.let { parseIso8601(it) },
         plan = PlanType.from(dto.plan),
         isPremiumActive = dto.isPremiumActive ?: false,
         paidUntil = dto.paidUntil?.let { parseCalendarDate(it) },

@@ -33,8 +33,12 @@ class FirebasePetRepository @Inject constructor(
     }
 
     override suspend fun getPet(id: String): Pet {
-        val pets = getPets()
-        return pets.firstOrNull { it.id == id } ?: throw AppError.PetNotFound
+        return try {
+            val dto = dataSource.getMyPet(id)
+            PetMapper.toDomain(dto)
+        } catch (e: Exception) {
+            throw AppErrorMapper.from(e)
+        }
     }
 
     override suspend fun claimPet(tagId: String): Pet {
@@ -46,20 +50,32 @@ class FirebasePetRepository @Inject constructor(
             } catch (e: Exception) {
                 Pet(
                     id = resp.petId,
+                    publicId = null,
                     ownerId = "",
                     name = "Mascota vinculada",
                     species = PetSpecies.OTHER,
                     breed = "",
+                    petType = "other",
+                    customPetType = null,
+                    customBreed = null,
+                    approxBirthDate = null,
+                    sex = null,
+                    sterilized = null,
                     age = null,
                     photoUrl = null,
                     notes = null,
                     allergies = null,
                     treatment = null,
                     ownerName = null,
+                    ownerEmail = null,
+                    address = null,
                     phones = emptyList(),
                     status = PetStatus.NORMAL,
+                    lostMode = false,
                     tagId = resp.tagId,
-                    publicId = null,
+                    activationStatus = null,
+                    nfcProgrammed = null,
+                    nfcProgrammedAt = null,
                     plan = PlanType.BASIC,
                     isPremiumActive = false,
                     paidUntil = null,

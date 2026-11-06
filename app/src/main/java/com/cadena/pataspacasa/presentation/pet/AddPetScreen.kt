@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.cadena.pataspacasa.domain.entity.PetSpecies
 import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
 
@@ -28,9 +29,12 @@ fun AddPetScreen(
 ) {
     val saveState by viewModel.saveState.collectAsState()
     val name by viewModel.name.collectAsState()
+    val species by viewModel.species.collectAsState()
     val breed by viewModel.breed.collectAsState()
+    val breedOptions by viewModel.breedOptions.collectAsState()
     val phonePrimary by viewModel.phonePrimary.collectAsState()
     val nameError by viewModel.nameError.collectAsState()
+    val breedError by viewModel.breedError.collectAsState()
     val phonesError by viewModel.phonesError.collectAsState()
 
     if (saveState is AddPetSaveState.Error) {
@@ -102,48 +106,6 @@ fun AddPetScreen(
                     Text("Pegar enlace o código")
                 }
             }
-
-            HorizontalDivider(color = AppColors.Divider)
-
-            // Or create new pet manually
-            Text(
-                "¿No tienes una placa aún? Crea el perfil de tu mascota:",
-                style = MaterialTheme.typography.bodySmall,
-                color = AppColors.TextSecondary,
-                textAlign = TextAlign.Center
-            )
-
-            SectionCard("Datos básicos") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AppTextField(
-                        label = "Nombre *",
-                        value = name,
-                        onValueChange = viewModel::onNameChange,
-                        placeholder = "Ej. Max",
-                        errorMessage = nameError
-                    )
-                    AppTextField(
-                        label = "Raza",
-                        value = breed,
-                        onValueChange = viewModel::onBreedChange,
-                        placeholder = "Ej. Labrador Dorado"
-                    )
-                    AppTextField(
-                        label = "Teléfono de contacto *",
-                        value = phonePrimary,
-                        onValueChange = viewModel::onPhonePrimaryChange,
-                        placeholder = "+52 33 1234 5678",
-                        errorMessage = phonesError,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                    )
-                }
-            }
-
-            PrimaryButton(
-                title = "Crear perfil de mascota",
-                onClick = { viewModel.createPet { } },
-                isLoading = saveState is AddPetSaveState.Saving
-            )
 
             Spacer(Modifier.height(16.dp))
         }

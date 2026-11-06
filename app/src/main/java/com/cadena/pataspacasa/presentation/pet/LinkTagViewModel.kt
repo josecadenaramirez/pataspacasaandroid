@@ -42,8 +42,10 @@ class LinkTagViewModel @Inject constructor(
         val input = _tagInput.value.trim()
         if (input.isEmpty()) return
 
-        // Extract tag code from URL if needed: https://pataspacasa.com/p/ABC123
-        val tagCode = extractTagCode(input)
+        val tagCode = TagCodeParser.parse(input) ?: run {
+            _step.value = LinkTagStep.Failure("Ingresa un ID válido o un enlace exacto de https://qa.pataspacasa.com/p/aBc123")
+            return
+        }
 
         _step.value = LinkTagStep.Claiming
         viewModelScope.launch {
@@ -59,13 +61,4 @@ class LinkTagViewModel @Inject constructor(
     }
 
     fun retry() { _step.value = LinkTagStep.Entry(_tagInput.value) }
-
-    private fun extractTagCode(input: String): String {
-        // Try to extract from URL patterns:
-        // https://pataspacasa.com/p/ABC123
-        // https://pataspacasa.com/scan/ABC123
-        val urlPattern = Regex("pataspacasa\\.com/(?:p|scan)/([A-Za-z0-9]+)")
-        val match = urlPattern.find(input)
-        return match?.groupValues?.getOrNull(1) ?: input
-    }
 }

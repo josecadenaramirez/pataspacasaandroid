@@ -14,15 +14,27 @@ class PetPremiumEntitlementTest {
         name = "Max",
         species = PetSpecies.DOG,
         breed = "Labrador",
+        petType = "dog",
+        customPetType = null,
+        customBreed = null,
+        approxBirthDate = null,
+        sex = null,
+        sterilized = null,
         age = 3,
         photoUrl = null,
         notes = null,
         allergies = null,
         treatment = null,
         ownerName = null,
+        ownerEmail = null,
+        address = null,
         phones = listOf("5512345678"),
         status = status,
+        lostMode = false,
         tagId = null,
+        activationStatus = null,
+        nfcProgrammed = null,
+        nfcProgrammedAt = null,
         plan = if (isPremiumActive) PlanType.PREMIUM else PlanType.BASIC,
         isPremiumActive = isPremiumActive,
         paidUntil = null,
@@ -31,33 +43,27 @@ class PetPremiumEntitlementTest {
     )
 
     @Test
-    fun `basic pet cannot edit profile`() {
-        val pet = buildPet(isPremiumActive = false)
-        assertFalse(pet.canEditProfile)
+    fun `all pets can edit profile regardless of plan`() {
+        val basicPet = buildPet(isPremiumActive = false)
+        assertTrue(basicPet.canEditProfile)
+        val premiumPet = buildPet(isPremiumActive = true)
+        assertTrue(premiumPet.canEditProfile)
     }
 
     @Test
-    fun `premium pet can edit profile`() {
-        val pet = buildPet(isPremiumActive = true)
-        assertTrue(pet.canEditProfile)
+    fun `all pets can toggle lost mode regardless of plan`() {
+        val basicPet = buildPet(isPremiumActive = false)
+        assertTrue(basicPet.canToggleLostMode)
+        val premiumPet = buildPet(isPremiumActive = true)
+        assertTrue(premiumPet.canToggleLostMode)
     }
 
     @Test
-    fun `basic pet cannot toggle lost mode`() {
-        val pet = buildPet(isPremiumActive = false)
-        assertFalse(pet.canToggleLostMode)
-    }
-
-    @Test
-    fun `premium pet can toggle lost mode`() {
-        val pet = buildPet(isPremiumActive = true)
-        assertTrue(pet.canToggleLostMode)
-    }
-
-    @Test
-    fun `basic pet cannot update photo`() {
-        val pet = buildPet(isPremiumActive = false)
-        assertFalse(pet.canUpdatePhoto)
+    fun `all pets can update photo regardless of plan`() {
+        val basicPet = buildPet(isPremiumActive = false)
+        assertTrue(basicPet.canUpdatePhoto)
+        val premiumPet = buildPet(isPremiumActive = true)
+        assertTrue(premiumPet.canUpdatePhoto)
     }
 
     @Test

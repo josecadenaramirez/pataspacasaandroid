@@ -2,15 +2,33 @@ package com.cadena.pataspacasa.data.dto
 
 import kotlinx.serialization.Serializable
 
+/**
+ * DTOs tolerant to both the Android-old shape (scans / scannedAt / id)
+ * and the iOS/backend shape (items / createdAt / eventId).
+ */
 @Serializable
 data class LostPetScanDTO(
-    val id: String,
-    val petId: String,
+    val id: String? = null,
+    val eventId: String? = null,
+    val petId: String? = null,
     val petName: String? = null,
+    val tagId: String? = null,
     val scannedAt: String? = null,
+    val createdAt: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    val locationDescription: String? = null
+    val locationDescription: String? = null,
+    val locationApprox: LocationApproxDTO? = null
+) {
+    fun resolvedId(): String = id ?: eventId ?: ""
+    fun resolvedScannedAt(): String? = scannedAt ?: createdAt
+}
+
+@Serializable
+data class LocationApproxDTO(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Double? = null
 )
 
 @Serializable
@@ -21,5 +39,10 @@ data class GetLostPetScansRequestDTO(
 @Serializable
 data class GetLostPetScansResponseDTO(
     val ok: Boolean? = null,
-    val scans: List<LostPetScanDTO> = emptyList()
+    // old android shape
+    val scans: List<LostPetScanDTO> = emptyList(),
+    // iOS/backend shape
+    val items: List<LostPetScanDTO> = emptyList(),
+    // pagination support returned by backend
+    val nextCursor: String? = null
 )

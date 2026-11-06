@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.cadena.pataspacasa.domain.entity.PetSpecies
 import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
 
@@ -26,7 +27,9 @@ fun EditPetScreen(
     val loadState by viewModel.loadState.collectAsState()
     val saveState by viewModel.saveState.collectAsState()
     val name by viewModel.name.collectAsState()
+    val species by viewModel.species.collectAsState()
     val breed by viewModel.breed.collectAsState()
+    val breedOptions by viewModel.breedOptions.collectAsState()
     val ownerName by viewModel.ownerName.collectAsState()
     val phonePrimary by viewModel.phonePrimary.collectAsState()
     val phoneSecondary1 by viewModel.phoneSecondary1.collectAsState()
@@ -34,6 +37,7 @@ fun EditPetScreen(
     val allergies by viewModel.allergies.collectAsState()
     val treatment by viewModel.treatment.collectAsState()
     val nameError by viewModel.nameError.collectAsState()
+    val breedError by viewModel.breedError.collectAsState()
     val phonesError by viewModel.phonesError.collectAsState()
 
     LaunchedEffect(petId) { viewModel.setPetId(petId) }
@@ -99,12 +103,77 @@ fun EditPetScreen(
                                 placeholder = "Ej. Max",
                                 errorMessage = nameError
                             )
-                            AppTextField(
-                                label = "Raza",
-                                value = breed,
-                                onValueChange = viewModel::onBreedChange,
-                                placeholder = "Ej. Labrador Dorado"
-                            )
+                            var speciesExpanded by remember { mutableStateOf(false) }
+                            ExposedDropdownMenuBox(
+                                expanded = speciesExpanded,
+                                onExpandedChange = { speciesExpanded = !speciesExpanded }
+                            ) {
+                                OutlinedTextField(
+                                    value = species.displayName,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Tipo *") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) },
+                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = speciesExpanded,
+                                    onDismissRequest = { speciesExpanded = false }
+                                ) {
+                                    PetSpecies.values().forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option.displayName) },
+                                            onClick = {
+                                                speciesExpanded = false
+                                                viewModel.onSpeciesChange(option)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (species == PetSpecies.DOG || species == PetSpecies.CAT) {
+                                var breedExpanded by remember { mutableStateOf(false) }
+                                ExposedDropdownMenuBox(
+                                    expanded = breedExpanded,
+                                    onExpandedChange = { breedExpanded = !breedExpanded }
+                                ) {
+                                    OutlinedTextField(
+                                        value = breed,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Raza *") },
+                                        placeholder = { Text("Selecciona una raza") },
+                                        isError = breedError != null,
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = breedExpanded) },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = breedExpanded,
+                                        onDismissRequest = { breedExpanded = false }
+                                    ) {
+                                        breedOptions.forEach { option ->
+                                            DropdownMenuItem(
+                                                text = { Text(option) },
+                                                onClick = {
+                                                    breedExpanded = false
+                                                    viewModel.onBreedChange(option)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                breedError?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall, color = AppColors.Error)
+                                }
+                            } else {
+                                AppTextField(
+                                    label = "Raza",
+                                    value = breed,
+                                    onValueChange = viewModel::onBreedChange,
+                                    placeholder = "Opcional"
+                                )
+                            }
                             AppTextField(
                                 label = "Nombre del dueño (visible en placa)",
                                 value = ownerName,

@@ -2,6 +2,7 @@ package com.cadena.pataspacasa.presentation.pet
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cadena.pataspacasa.data.catalog.BreedCatalog
 import com.cadena.pataspacasa.core.error.AppError
 import com.cadena.pataspacasa.core.error.AppErrorMapper
 import com.cadena.pataspacasa.domain.entity.Pet
@@ -35,22 +36,39 @@ class AddPetViewModel @Inject constructor(
 
     private val _name = MutableStateFlow("")
     val name: StateFlow<String> = _name.asStateFlow()
+    private val _species = MutableStateFlow(PetSpecies.DOG)
+    val species: StateFlow<PetSpecies> = _species.asStateFlow()
     private val _breed = MutableStateFlow("")
     val breed: StateFlow<String> = _breed.asStateFlow()
+    private val _breedOptions = MutableStateFlow(BreedCatalog.breedsFor(PetSpecies.DOG))
+    val breedOptions: StateFlow<List<String>> = _breedOptions.asStateFlow()
     private val _phonePrimary = MutableStateFlow("")
     val phonePrimary: StateFlow<String> = _phonePrimary.asStateFlow()
     private val _nameError = MutableStateFlow<String?>(null)
     val nameError: StateFlow<String?> = _nameError.asStateFlow()
+    private val _breedError = MutableStateFlow<String?>(null)
+    val breedError: StateFlow<String?> = _breedError.asStateFlow()
     private val _phonesError = MutableStateFlow<String?>(null)
     val phonesError: StateFlow<String?> = _phonesError.asStateFlow()
 
     fun onNameChange(v: String) { _name.value = v; _nameError.value = null }
-    fun onBreedChange(v: String) { _breed.value = v }
+    fun onSpeciesChange(value: PetSpecies) {
+        if (_species.value == value) return
+        _species.value = value
+        _breedOptions.value = BreedCatalog.breedsFor(value)
+        _breed.value = ""
+        _breedError.value = null
+    }
+    fun onBreedChange(v: String) { _breed.value = v; _breedError.value = null }
     fun onPhonePrimaryChange(v: String) { _phonePrimary.value = v; _phonesError.value = null }
 
     fun createPet(onSuccess: (Pet) -> Unit) {
         val trimName = _name.value.trim()
         if (trimName.isEmpty()) { _nameError.value = "El nombre no puede estar vacío."; return }
+        if ((_species.value == PetSpecies.DOG || _species.value == PetSpecies.CAT) && _breed.value.trim().isEmpty()) {
+            _breedError.value = "Selecciona una raza."
+            return
+        }
         val p1 = _phonePrimary.value.trim()
         if (p1.isEmpty()) { _phonesError.value = "Agrega al menos un número de celular."; return }
 
@@ -59,17 +77,29 @@ class AddPetViewModel @Inject constructor(
             publicId = null,
             ownerId = "",
             name = trimName,
-            species = PetSpecies.DOG,
+            species = _species.value,
+            petType = _species.value.displayName,
+            customPetType = null,
             breed = _breed.value.trim(),
+            customBreed = null,
+            approxBirthDate = null,
+            sex = null,
+            sterilized = null,
             age = null,
             photoUrl = null,
             notes = null,
             allergies = null,
             treatment = null,
             ownerName = null,
+            ownerEmail = null,
+            address = null,
             phones = listOf(p1.filter { it.isDigit() }).filter { it.isNotEmpty() },
             status = PetStatus.NORMAL,
+            lostMode = false,
             tagId = null,
+            activationStatus = null,
+            nfcProgrammed = null,
+            nfcProgrammedAt = null,
             plan = PlanType.BASIC,
             isPremiumActive = false,
             paidUntil = null,

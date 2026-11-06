@@ -52,13 +52,27 @@ class SubscriptionStateTest {
 
     @Test
     fun `basic plan hasPremiumPlan is false`() {
-        val user = User("uid", "Name", "test@test.com", null, PlanType.BASIC, Date())
+        val user = User(
+            id = "uid",
+            name = "Name",
+            email = "test@test.com",
+            photoUrl = null,
+            plan = PlanType.BASIC,
+            createdAt = Date()
+        )
         assertFalse(user.hasPremiumPlan)
     }
 
     @Test
     fun `premium plan hasPremiumPlan is true`() {
-        val user = User("uid", "Name", "test@test.com", null, PlanType.PREMIUM, Date())
+        val user = User(
+            id = "uid",
+            name = "Name",
+            email = "test@test.com",
+            photoUrl = null,
+            plan = PlanType.PREMIUM,
+            createdAt = Date()
+        )
         assertTrue(user.hasPremiumPlan)
     }
 }

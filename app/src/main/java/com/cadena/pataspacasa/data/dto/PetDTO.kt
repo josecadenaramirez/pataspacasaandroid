@@ -11,6 +11,12 @@ data class PetDTO(
     val name: String,
     val species: String? = null,
     val breed: String? = null,
+    val petType: String? = null,
+    val customPetType: String? = null,
+    val customBreed: String? = null,
+    val approxBirthDate: String? = null,  // YYYY-MM-DD format
+    val sex: String? = null,
+    val sterilized: Boolean? = null,
     val age: Int? = null,
     val photoUrl: String? = null,
     val notes: String? = null,
@@ -19,14 +25,18 @@ data class PetDTO(
     val ownerId: String? = null,
     val ownerName: String? = null,
     val ownerEmail: String? = null,
+    val address: String? = null,
     val phones: List<String>? = null,
     val status: String? = null,
     val lostMode: Boolean? = null,
+    val activationStatus: String? = null,
+    val nfcProgrammed: Boolean? = null,
+    val nfcProgrammedAt: String? = null,  // ISO8601 format
     val plan: String? = null,
     val isPremiumActive: Boolean? = null,
-    val paidUntil: String? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
+    val paidUntil: String? = null,  // YYYY-MM-DD format
+    val createdAt: String? = null,  // ISO8601 format
+    val updatedAt: String? = null  // ISO8601 format
 )
 
 @Serializable
@@ -100,4 +110,10 @@ data class SetLostModeResponseDTO(
 data class GetMyPetsResponseDTO(
     val ok: Boolean? = null,
     val pets: List<PetDTO> = emptyList()
+)
+
+@Serializable
+data class GetMyPetResponseDTO(
+    val ok: Boolean? = null,
+    val pet: PetDTO? = null
 )

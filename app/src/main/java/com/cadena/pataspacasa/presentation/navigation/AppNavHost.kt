@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.cadena.pataspacasa.presentation.auth.ForgotPasswordScreen
@@ -24,8 +25,42 @@ import com.cadena.pataspacasa.presentation.user.PremiumScreen
 @Composable
 fun AppNavHost(
     navController: NavHostController = rememberNavController(),
-    startDestination: Any = SplashRoute
+    startDestination: Any = SplashRoute,
+    pendingLaunchIntent: LaunchIntent? = null,
+    onLaunchIntentConsumed: () -> Unit = {}
 ) {
+    var launchIntent by remember { mutableStateOf<LaunchIntent?>(null) }
+    LaunchedEffect(pendingLaunchIntent) {
+        if (pendingLaunchIntent != null) {
+            launchIntent = pendingLaunchIntent
+        }
+    }
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentEntry?.destination?.route.orEmpty()
+
+    fun consumePendingAfterAuth() {
+        val current = launchIntent ?: return
+        when (current) {
+            is LaunchIntent.LinkTag -> navController.navigate(LinkTagRoute(current.tagCode))
+            is LaunchIntent.LostPetScan -> navController.navigate(
+                LostPetScanDetailRoute(current.eventId, current.petId)
+            )
+        }
+        launchIntent = null
+        onLaunchIntentConsumed()
+    }
+
+    LaunchedEffect(launchIntent, currentRoute) {
+        if (launchIntent == null) return@LaunchedEffect
+        val onAuthFlow = currentRoute.contains("LoginRoute") ||
+            currentRoute.contains("RegisterRoute") ||
+            currentRoute.contains("ForgotPasswordRoute") ||
+            currentRoute.contains("SplashRoute")
+        if (!onAuthFlow) {
+            consumePendingAfterAuth()
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable<SplashRoute> {
             SplashScreen(
@@ -34,6 +69,7 @@ fun AppNavHost(
                         navController.navigate(HomeRoute) {
                             popUpTo(SplashRoute) { inclusive = true }
                         }
+                        consumePendingAfterAuth()
                     } else {
                         navController.navigate(LoginRoute) {
                             popUpTo(SplashRoute) { inclusive = true }
@@ -49,6 +85,7 @@ fun AppNavHost(
                     navController.navigate(HomeRoute) {
                         popUpTo(LoginRoute) { inclusive = true }
                     }
+                    consumePendingAfterAuth()
                 },
                 onNavigateToRegister = { navController.navigate(RegisterRoute) },
                 onNavigateToForgotPassword = { email ->
@@ -63,6 +100,7 @@ fun AppNavHost(
                     navController.navigate(HomeRoute) {
                         popUpTo(LoginRoute) { inclusive = true }
                     }
+                    consumePendingAfterAuth()
                 },
                 onNavigateBack = { navController.popBackStack() }
             )

@@ -17,7 +17,10 @@ class FirebaseLostPetScanRepository @Inject constructor(
     override suspend fun getScans(petId: String): List<LostPetScanEvent> {
         val request = GetLostPetScansRequestDTO(petId = petId)
         val resp = dataSource.getLostPetScans(request)
-        return resp.scans.map { LostPetScanMapper.toDomain(it) }
+        // Backend (iOS/source-of-truth) returns `items` + `nextCursor`.
+        // Older Android clients expect `scans`. Prefer `items` when present.
+        val raw = if (resp.items.isNotEmpty()) resp.items else resp.scans
+        return raw.map { LostPetScanMapper.toDomain(it) }
     }
 
     override suspend fun getScan(eventId: String, petId: String): LostPetScanEvent {

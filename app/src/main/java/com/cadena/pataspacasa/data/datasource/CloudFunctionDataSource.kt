@@ -7,10 +7,8 @@ import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,13 +23,20 @@ class CloudFunctionDataSource @Inject constructor(
         val token = authDataSource.getIdToken()
         val payload = mapOf("token" to token)
         val result = functions.getHttpsCallable("getMyPets").call(payload).await()
-        val jsonStr = Json.encodeToString(result.data as? Map<*, *> ?: emptyMap<String, Any>())
+        val element = anyToJsonElement(result.data)
         return try {
-            val resp = json.decodeFromString<GetMyPetsResponseDTO>(jsonStr)
+            val resp = json.decodeFromJsonElement<GetMyPetsResponseDTO>(element)
             resp.pets
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    suspend fun getMyPet(petId: String): PetDTO {
+        val token = authDataSource.getIdToken()
+        val payload = mapOf("petId" to petId, "token" to token)
+        val response: GetMyPetResponseDTO = callFunction("getMyPet", payload)
+        return response.pet ?: throw Exception("Pet not found")
     }
 
     suspend fun claimPetByTag(request: ClaimPetRequestDTO): ClaimPetResponseDTO {
@@ -120,12 +125,30 @@ class CloudFunctionDataSource @Inject constructor(
     private suspend inline fun <reified T> callFunction(name: String, payload: Map<String, Any>): T {
         return try {
             val result = functions.getHttpsCallable(name).call(payload).await()
-            val dataStr = kotlinx.serialization.json.Json.encodeToString(
-                result.data as? Map<*, *> ?: emptyMap<String, Any>()
-            )
-            json.decodeFromString(dataStr)
+            val element = anyToJsonElement(result.data)
+            json.decodeFromJsonElement(element)
         } catch (e: Exception) {
             throw AppErrorMapper.from(e)
         }
     }
+
+    private fun anyToJsonElement(value: Any?): JsonElement {
+        return when (value) {
+            null -> JsonNull
+            is JsonElement -> value
+            is Map<*, *> -> {
+                val content = value.entries.associate { (k, v) ->
+                    k.toString() to anyToJsonElement(v)
+                }
+                JsonObject(content)
+            }
+            is List<*> -> JsonArray(value.map { anyToJsonElement(it) })
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is String -> JsonPrimitive(value)
+            is java.util.Date -> JsonPrimitive(value.time)
+            else -> JsonPrimitive(value.toString())
+        }
+    }
 }
+
