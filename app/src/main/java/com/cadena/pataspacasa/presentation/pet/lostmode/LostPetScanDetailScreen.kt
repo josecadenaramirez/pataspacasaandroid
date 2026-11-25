@@ -1,5 +1,7 @@
+
 package com.cadena.pataspacasa.presentation.pet.lostmode
 
+import android.content.ActivityNotFoundException
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -94,9 +96,22 @@ private fun ScanDetailContent(scan: LostPetScanEvent) {
                     }
                     Spacer(Modifier.height(8.dp))
                     PrimaryButton(title = "Ver en Maps", onClick = {
-                        val uri = Uri.parse("geo:${scan.latitude},${scan.longitude}?q=${scan.latitude},${scan.longitude}")
-                        val intent = Intent(Intent.ACTION_VIEW, uri)
-                        if (intent.resolveActivity(context.packageManager) != null) context.startActivity(intent)
+                        val query = "${scan.latitude},${scan.longitude}"
+                        val appIntent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://www.google.com/maps/search/?api=1&query=$query")
+                        ).apply {
+                            setPackage("com.google.android.apps.maps")
+                        }
+                        val webIntent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://www.google.com/maps/search/?api=1&query=$query")
+                        )
+                        try {
+                            context.startActivity(appIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            context.startActivity(webIntent)
+                        }
                     })
                 }
             }
