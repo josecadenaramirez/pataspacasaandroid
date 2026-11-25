@@ -5,10 +5,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PetDTO(
-    val id: String,
+    val id: String = "",
+    val petId: String? = null,
     val publicId: String? = null,
     val tagId: String? = null,
-    val name: String,
+    val name: String? = null,
     val species: String? = null,
     val breed: String? = null,
     val petType: String? = null,
@@ -46,8 +47,10 @@ data class ClaimPetRequestDTO(
 
 @Serializable
 data class ClaimPetResponseDTO(
+    val ok: Boolean = false,
     val petId: String,
-    val tagId: String? = null
+    val tagId: String? = null,
+    val alreadyLinked: Boolean = false
 )
 
 @Serializable
@@ -64,15 +67,23 @@ data class CreatePetRequestDTO(
 
 @Serializable
 data class UpdatePetRequestDTO(
-    val petId: String,
-    val name: String,
+    val petId: String = "",
+    val name: String? = null,
+    val petType: String? = null,
+    val customPetType: String? = null,
     val breed: String? = null,
+    val customBreed: String? = null,
+    val approxBirthDate: String? = null,
+    val sex: String? = null,
+    val sterilized: Boolean? = null,
     val age: Int? = null,
     val notes: String? = null,
     val allergies: String? = null,
     val treatment: String? = null,
     val ownerName: String? = null,
-    val phones: List<String>? = null
+    val ownerEmail: String? = null,
+    val phones: List<String>? = null,
+    val address: String? = null
 )
 
 @Serializable
@@ -91,7 +102,17 @@ data class UpdatePetPhotoRequestDTO(
 @Serializable
 data class UpdatePetPhotoResponseDTO(
     val photoUrl: String? = null,
-    val ok: Boolean? = null
+    val ok: Boolean? = null,
+    val data: UpdatePetPhotoDataDTO? = null
+) {
+    val resolvedPhotoUrl: String?
+        get() = photoUrl ?: data?.photoUrl
+}
+
+@Serializable
+data class UpdatePetPhotoDataDTO(
+    val photoUrl: String? = null,
+    val updatedAt: String? = null
 )
 
 @Serializable
@@ -105,6 +126,12 @@ data class SetLostModeResponseDTO(
     val ok: Boolean? = null,
     val status: String? = null
 )
+
+@Serializable
+data class UpdatePetResponseDTO(val ok: Boolean, val pet: PetDTO)
+
+@Serializable
+data class SetPetLostModeResponseDTO(val ok: Boolean)
 
 @Serializable
 data class GetMyPetsResponseDTO(

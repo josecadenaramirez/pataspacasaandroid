@@ -24,6 +24,9 @@ import com.cadena.pataspacasa.domain.entity.Pet
 import com.cadena.pataspacasa.domain.entity.PetSpecies
 import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +38,15 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val userName by viewModel.userName.collectAsState()
-    var isRefreshing by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.loadData()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val isRefreshing = uiState is HomeUiState.Loading
 
     Scaffold(
         topBar = {
@@ -54,9 +65,7 @@ fun HomeScreen(
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {
-                isRefreshing = true
                 viewModel.refresh()
-                isRefreshing = false
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -72,7 +81,7 @@ fun HomeScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         val firstName = userName.split(" ").firstOrNull() ?: userName
                         Text(
-                            text = "Hola, $firstName 👋",
+                            text = "Hola $firstName 👋",
                             style = MaterialTheme.typography.displaySmall
                         )
                         Text(
@@ -223,7 +232,8 @@ fun PetCard(
                         text = pet.name,
                         style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     if (pet.isLost) {
                         Surface(
@@ -234,18 +244,6 @@ fun PetCard(
                                 text = "Perdido",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AppColors.TextOnDark,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                    if (pet.isPremiumActive) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = AppColors.BadgePremium
-                        ) {
-                            Text(
-                                text = "⭐",
-                                style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }

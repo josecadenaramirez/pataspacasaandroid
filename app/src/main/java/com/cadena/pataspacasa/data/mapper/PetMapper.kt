@@ -14,11 +14,11 @@ import java.util.TimeZone
 object PetMapper {
 
     fun toDomain(dto: PetDTO): Pet = Pet(
-        id = dto.id,
+        id = dto.petId ?: dto.id,
         publicId = dto.publicId,
         ownerId = dto.ownerId ?: "",
-        name = dto.name,
-        species = PetSpecies.from(dto.species),
+        name = dto.name.orEmpty(),
+        species = PetSpecies.from(dto.petType ?: dto.species),
         breed = dto.breed ?: "",
         petType = dto.petType ?: dto.species ?: "dog",
         customPetType = dto.customPetType,

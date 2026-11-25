@@ -25,8 +25,20 @@ fun LostModeScreen(
     val step by viewModel.step.collectAsState()
     val showConfirmActivation by viewModel.showConfirmActivation.collectAsState()
     val showConfirmDeactivation by viewModel.showConfirmDeactivation.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(petId) { viewModel.setPetId(petId) }
+
+    errorMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearError,
+            title = { Text("No se pudo actualizar") },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearError) { Text("Entendido") }
+            }
+        )
+    }
 
     if (showConfirmActivation) {
         AlertDialog(
@@ -188,14 +200,19 @@ fun LostModeScreen(
 private fun FeatureRow(emoji: String, color: androidx.compose.ui.graphics.Color, text: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
         Text(emoji)
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppColors.TextSecondary,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
 private fun SuccessContent(title: String, description: String, onDone: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

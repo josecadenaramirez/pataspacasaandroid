@@ -15,7 +15,6 @@ import kotlinx.serialization.Serializable
 @Serializable object AddPetRoute
 @Serializable data class LinkTagRoute(val tagCode: String)
 @Serializable object ProfileRoute
-@Serializable object PremiumRoute
 @Serializable data class LostModeRoute(val petId: String)
 @Serializable data class LostPetScanDetailRoute(val eventId: String, val petId: String)
 @Serializable data class LostPetScanHistoryRoute(val petId: String, val petName: String)

@@ -41,7 +41,11 @@ class LostModeViewModel @Inject constructor(
     private val _showConfirmDeactivation = MutableStateFlow(false)
     val showConfirmDeactivation: StateFlow<Boolean> = _showConfirmDeactivation.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     private var petId: String = ""
+    private var lastConfirmedPet: Pet? = null
 
     val petName: String
         get() = when (val s = _step.value) {
@@ -62,6 +66,7 @@ class LostModeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val pet = getPetDetailUseCase.execute(petId)
+                lastConfirmedPet = pet
                 _step.value = if (pet.isLost) LostModeStep.Active(pet) else LostModeStep.Inactive(pet)
             } catch (e: Exception) {
                 _step.value = LostModeStep.Error(AppErrorMapper.from(e).userMessage)
@@ -69,8 +74,12 @@ class LostModeViewModel @Inject constructor(
         }
     }
 
-    fun requestActivation() { _showConfirmActivation.value = true }
-    fun requestDeactivation() { _showConfirmDeactivation.value = true }
+    fun requestActivation() {
+        if (_step.value is LostModeStep.Inactive) _showConfirmActivation.value = true
+    }
+    fun requestDeactivation() {
+        if (_step.value is LostModeStep.Active) _showConfirmDeactivation.value = true
+    }
     fun dismissActivation() { _showConfirmActivation.value = false }
     fun dismissDeactivation() { _showConfirmDeactivation.value = false }
 
@@ -80,11 +89,12 @@ class LostModeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val pet = enableLostModeUseCase.execute(petId)
+                lastConfirmedPet = pet
                 _step.value = LostModeStep.ActivationSuccess(pet)
             } catch (e: AppError) {
-                _step.value = LostModeStep.Error(e.userMessage)
+                restoreConfirmedPet(e.userMessage)
             } catch (e: Exception) {
-                _step.value = LostModeStep.Error(AppErrorMapper.from(e).userMessage)
+                restoreConfirmedPet(AppErrorMapper.from(e).userMessage)
             }
         }
     }
@@ -95,14 +105,26 @@ class LostModeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val pet = disableLostModeUseCase.execute(petId)
+                lastConfirmedPet = pet
                 _step.value = LostModeStep.DeactivationSuccess(pet)
             } catch (e: AppError) {
-                _step.value = LostModeStep.Error(e.userMessage)
+                restoreConfirmedPet(e.userMessage)
             } catch (e: Exception) {
-                _step.value = LostModeStep.Error(AppErrorMapper.from(e).userMessage)
+                restoreConfirmedPet(AppErrorMapper.from(e).userMessage)
             }
         }
     }
 
     fun retryAfterError() = loadPet()
+    fun clearError() { _errorMessage.value = null }
+
+    private fun restoreConfirmedPet(message: String) {
+        val pet = lastConfirmedPet
+        _step.value = when {
+            pet == null -> LostModeStep.Error(message)
+            pet.isLost -> LostModeStep.Active(pet)
+            else -> LostModeStep.Inactive(pet)
+        }
+        _errorMessage.value = message
+    }
 }

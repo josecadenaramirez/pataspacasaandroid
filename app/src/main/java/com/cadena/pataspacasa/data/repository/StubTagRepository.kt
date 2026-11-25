@@ -8,16 +8,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class StubTagRepository @Inject constructor() : TagRepository {
+class UnavailableLiveTagRepository @Inject constructor() : TagRepository {
     override suspend fun getTag(tagCode: String): NFCTag {
-        throw AppError.TagNotFound
+        throw AppError.PermissionDenied
     }
 
     override suspend fun linkTagToPet(tagCode: String, petId: String): NFCTag {
-        throw AppError.TagNotFound
+        throw AppError.PermissionDenied
     }
 
     override suspend fun validateTag(tagCode: String): NFCTag {
-        throw AppError.TagNotFound
+        throw AppError.PermissionDenied
     }
 }

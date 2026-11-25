@@ -23,6 +23,7 @@ class RegisterViewModel @Inject constructor(
     fun onNameChange(value: String) { _uiState.value = _uiState.value.copy(name = value, nameError = null) }
     fun onEmailChange(value: String) { _uiState.value = _uiState.value.copy(email = value, emailError = null) }
     fun onPasswordChange(value: String) { _uiState.value = _uiState.value.copy(password = value, passwordError = null) }
+    fun onConfirmPasswordChange(value: String) { _uiState.value = _uiState.value.copy(confirmPassword = value, confirmPasswordError = null) }
 
     fun register(onSuccess: () -> Unit) {
         val state = _uiState.value
@@ -67,8 +68,18 @@ class RegisterViewModel @Inject constructor(
             !state.password.any { it.isUpperCase() } -> "La contraseña debe tener al menos una mayúscula."
             else -> null
         }
-        _uiState.value = state.copy(nameError = nameError, emailError = emailError, passwordError = passwordError)
-        return nameError == null && emailError == null && passwordError == null
+        val confirmPasswordError = when {
+            state.confirmPassword.isBlank() -> "Confirma tu contraseña."
+            state.confirmPassword != state.password -> "Las contraseñas no coinciden."
+            else -> null
+        }
+        _uiState.value = state.copy(
+            nameError = nameError,
+            emailError = emailError,
+            passwordError = passwordError,
+            confirmPasswordError = confirmPasswordError
+        )
+        return nameError == null && emailError == null && passwordError == null && confirmPasswordError == null
     }
 }
 
@@ -76,9 +87,11 @@ data class RegisterUiState(
     val name: String = "",
     val email: String = "",
     val password: String = "",
+    val confirmPassword: String = "",
     val isLoading: Boolean = false,
     val nameError: String? = null,
     val emailError: String? = null,
     val passwordError: String? = null,
+    val confirmPasswordError: String? = null,
     val error: AppError? = null
 )

@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "45043652704",
+    "project_id": "petsnfc-fefcc",
+    "storage_bucket": "petsnfc-fefcc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45043652704:android:0796e0e2611642e2ef0b05",
+        "android_client_info": {
+          "package_name": "com.cadena.pataspacasa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "45043652704-7notgd1m5g64csbg5ijdlh1nnmgn6m2s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHxewKQhfM_VSLVJ3jFcFwyT2WcxnYXMc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "45043652704-7notgd1m5g64csbg5ijdlh1nnmgn6m2s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45043652704:android:9b65cdeff598a402ef0b05",
+        "android_client_info": {
+          "package_name": "com.cadena.pataspacasa.qa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "45043652704-7notgd1m5g64csbg5ijdlh1nnmgn6m2s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHxewKQhfM_VSLVJ3jFcFwyT2WcxnYXMc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "45043652704-7notgd1m5g64csbg5ijdlh1nnmgn6m2s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

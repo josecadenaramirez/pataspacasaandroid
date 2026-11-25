@@ -40,5 +40,4 @@ object AppColors {
 
     // Badges
     val BadgeLost = Color(0xFFDF6848)
-    val BadgePremium = Color(0xFFE5A126)
 }

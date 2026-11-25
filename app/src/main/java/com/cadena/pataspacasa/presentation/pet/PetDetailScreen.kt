@@ -3,7 +3,6 @@ package com.cadena.pataspacasa.presentation.pet
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,13 +18,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.cadena.pataspacasa.domain.entity.PetSpecies
+import com.cadena.pataspacasa.core.error.AppErrorMapper
 import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,25 +43,54 @@ fun PetDetailScreen(
     onNavigateToEditPet: (String) -> Unit,
     onNavigateToLostMode: (String) -> Unit,
     onNavigateToLinkTag: (String) -> Unit,
-    onNavigateToScanHistory: (String, String) -> Unit,
-    onNavigateToPremium: () -> Unit
+    onNavigateToScanHistory: (String, String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isChangingLostMode by viewModel.isChangingLostMode.collectAsState()
-    val showPremiumUpsell by viewModel.showPremiumUpsell.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    var showLostModeConfirm by remember { mutableStateOf(false) }
     var showDisableLostModeConfirm by remember { mutableStateOf(false) }
+    var showImageGallery by remember { mutableStateOf(false) }
+    var imageGalleryLoading by remember { mutableStateOf(false) }
+    var imageGalleryAccess by remember { mutableStateOf(ImageMediaAccess.NONE) }
+    var localImages by remember { mutableStateOf<List<LocalDeviceImage>>(emptyList()) }
+    var localGalleryMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            val bytes = context.contentResolver.openInputStream(it)?.use { stream -> stream.readBytes() }
-            bytes?.let { data -> viewModel.updatePhoto(data) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
+    val loadLocalGallery: () -> Unit = {
+        imageGalleryAccess = currentImageMediaAccess(context)
+        showImageGallery = true
+        imageGalleryLoading = true
+        coroutineScope.launch {
+            when (val result = loadLocalDeviceImages(context)) {
+                is LocalImageLoadResult.Success -> localImages = result.images
+                is LocalImageLoadResult.Error -> {
+                    localImages = emptyList()
+                    localGalleryMessage = result.message
+                }
+            }
+            imageGalleryLoading = false
+        }
+    }
+    val imagePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        if (currentImageMediaAccess(context) != ImageMediaAccess.NONE) {
+            loadLocalGallery()
+        } else {
+            localGalleryMessage = "Necesitamos permiso para mostrar las imágenes guardadas en este dispositivo."
         }
     }
 
     LaunchedEffect(petId) { viewModel.setPetId(petId) }
+    DisposableEffect(lifecycleOwner, petId) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.loadPet()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     errorMessage?.let { msg ->
         AlertDialog(
@@ -65,35 +101,37 @@ fun PetDetailScreen(
         )
     }
 
-    if (showPremiumUpsell) {
+    localGalleryMessage?.let { message ->
         AlertDialog(
-            onDismissRequest = { viewModel.dismissPremiumUpsell() },
-            title = { Text("Función Premium") },
-            text = { Text("Esta función está disponible solo en el plan Premium. ¿Deseas ver los planes?") },
+            onDismissRequest = { localGalleryMessage = null },
+            title = { Text("No se pudo abrir la galería") },
+            text = { Text(message) },
             confirmButton = {
-                TextButton(onClick = { viewModel.dismissPremiumUpsell(); onNavigateToPremium() }) { Text("Ver Premium") }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissPremiumUpsell() }) { Text("Cancelar") }
+                TextButton(onClick = { localGalleryMessage = null }) { Text("Entendido") }
+            }
+        )
+    }
+
+    if (showImageGallery) {
+        LocalImageGallerySheet(
+            images = localImages,
+            isLoading = imageGalleryLoading,
+            access = imageGalleryAccess,
+            onDismiss = { showImageGallery = false },
+            onImageSelected = { image ->
+                showImageGallery = false
+                coroutineScope.launch {
+                    runCatching { preparePetPhoto(context, image.uri) }
+                        .onSuccess { photo -> viewModel.updatePhoto(photo.bytes) }
+                        .onFailure { error ->
+                            localGalleryMessage = AppErrorMapper.from(error).userMessage
+                        }
+                }
             }
         )
     }
 
     val pet = (uiState as? PetDetailUiState.Success)?.pet
-
-    if (showLostModeConfirm && pet != null) {
-        AlertDialog(
-            onDismissRequest = { showLostModeConfirm = false },
-            title = { Text("¿Activar Modo Perdido para ${pet.name}?") },
-            text = { Text("Cuando alguien escanee la placa de ${pet.name}, verá de inmediato que está perdida y cómo contactarte.") },
-            confirmButton = {
-                TextButton(onClick = { showLostModeConfirm = false; viewModel.enableLostMode() }) {
-                    Text("Activar", color = AppColors.Error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { showLostModeConfirm = false }) { Text("Cancelar") } }
-        )
-    }
 
     if (showDisableLostModeConfirm && pet != null) {
         AlertDialog(
@@ -148,7 +186,7 @@ fun PetDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // Lost banner
-                        if (p.isLost && p.isPremiumActive) {
+                        if (p.isLost) {
                             Card(
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = AppColors.Coral.copy(alpha = 0.12f))
@@ -159,7 +197,7 @@ fun PetDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Text("🚨", style = MaterialTheme.typography.titleLarge)
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             "Modo Perdido activo",
                                             style = MaterialTheme.typography.titleMedium,
@@ -181,64 +219,73 @@ fun PetDetailScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .clip(CircleShape)
-                                    .background(AppColors.BackgroundSecondary)
-                                    .then(
-                                        if (p.canUpdatePhoto)
-                                            Modifier.clickable { imagePickerLauncher.launch("image/*") }
-                                        else Modifier
-                                    ),
+                                modifier = Modifier.size(136.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (!p.photoUrl.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = p.photoUrl,
-                                        contentDescription = p.name,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Text(
-                                        text = when (p.species) {
-                                            PetSpecies.DOG -> "🐕"
-                                            PetSpecies.CAT -> "🐈"
-                                            PetSpecies.OTHER -> "🐾"
-                                        },
-                                        style = MaterialTheme.typography.displaySmall
-                                    )
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape)
+                                        .background(AppColors.BackgroundSecondary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!p.photoUrl.isNullOrEmpty()) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(p.photoUrl)
+                                                .memoryCacheKey("${p.photoUrl}:${p.updatedAt.time}")
+                                                .diskCacheKey("${p.photoUrl}:${p.updatedAt.time}")
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = p.name,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Text(
+                                            text = when (p.species) {
+                                                PetSpecies.DOG -> "🐕"
+                                                PetSpecies.CAT -> "🐈"
+                                                PetSpecies.OTHER -> "🐾"
+                                            },
+                                            style = MaterialTheme.typography.displaySmall
+                                        )
+                                    }
                                 }
                                 if (p.canUpdatePhoto) {
-                                    Box(
+                                    FilledIconButton(
+                                        onClick = {
+                                            if (currentImageMediaAccess(context) != ImageMediaAccess.NONE) {
+                                                loadLocalGallery()
+                                            } else {
+                                                imagePermissionLauncher.launch(requiredImagePermissions())
+                                            }
+                                        },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(AppColors.Primary),
-                                        contentAlignment = Alignment.Center
+                                            .size(48.dp)
+                                            .semantics { contentDescription = "Cambiar foto" },
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = AppColors.Primary,
+                                            contentColor = AppColors.TextOnDark
+                                        )
                                     ) {
-                                        Icon(Icons.Default.CameraAlt, null, tint = AppColors.TextOnDark, modifier = Modifier.size(16.dp))
+                                        Icon(
+                                            Icons.Default.CameraAlt,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp)
+                                        )
                                     }
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text(p.name, style = MaterialTheme.typography.headlineMedium)
-                            Text("${p.breed.ifEmpty { "Raza desconocida" }} · ${p.species.displayName}", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
-                            if (p.isPremiumActive) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = AppColors.BadgePremium.copy(alpha = 0.15f),
-                                    modifier = Modifier.padding(top = 4.dp)
-                                ) {
-                                    Text(
-                                        "⭐ Premium",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = AppColors.Mustard,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
+                            Text(p.name, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                            Text(
+                                "${p.breed.ifEmpty { "Raza desconocida" }} · ${p.species.displayName}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = AppColors.TextSecondary,
+                                textAlign = TextAlign.Center
+                            )
                         }
 
                         // Info section
@@ -290,8 +337,7 @@ fun PetDetailScreen(
                             }
                         }
 
-                        // Scan history button (Premium)
-                        if (p.isPremiumActive && p.hasNFCTag) {
+                        if (p.hasNFCTag) {
                             OutlinedButton(
                                 onClick = { onNavigateToScanHistory(p.id, p.name) },
                                 modifier = Modifier.fillMaxWidth()
@@ -304,58 +350,31 @@ fun PetDetailScreen(
 
                         // Lost mode section
                         SectionCard("Modo Perdido") {
-                            if (p.isPremiumActive) {
-                                if (p.isLost) {
-                                    Text(
-                                        "Modo Perdido activo. Tu mascota aparecerá como perdida en escaneos.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = AppColors.TextSecondary
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    DestructiveButton(
-                                        title = "Desactivar Modo Perdido",
-                                        onClick = { showDisableLostModeConfirm = true },
-                                        isLoading = isChangingLostMode
-                                    )
-                                } else {
-                                    Text(
-                                        "Activa el Modo Perdido si tu mascota está extraviada.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = AppColors.TextSecondary
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    Button(
-                                        onClick = { showLostModeConfirm = true },
-                                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Coral),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        enabled = !isChangingLostMode
-                                    ) {
-                                        if (isChangingLostMode) {
-                                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = AppColors.TextOnDark, strokeWidth = 2.dp)
-                                        } else {
-                                            Text("Activar Modo Perdido")
-                                        }
-                                    }
-                                }
+                            if (p.isLost) {
+                                Text(
+                                    "Modo Perdido activo. Tu mascota aparecerá como perdida en escaneos.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = AppColors.TextSecondary
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                DestructiveButton(
+                                    title = "Desactivar Modo Perdido",
+                                    onClick = { showDisableLostModeConfirm = true },
+                                    isLoading = isChangingLostMode
+                                )
                             } else {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("⭐", style = MaterialTheme.typography.bodyMedium)
-                                    Column {
-                                        Text("Solo disponible en Premium", style = MaterialTheme.typography.titleMedium)
-                                        Text(
-                                            "Actualiza tu plan para usar Modo Perdido.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = AppColors.TextSecondary
-                                        )
-                                    }
-                                }
+                                Text(
+                                    "Activa el Modo Perdido para alertar a quien encuentre a ${p.name} y registrar los escaneos de su placa.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = AppColors.TextSecondary
+                                )
                                 Spacer(Modifier.height(8.dp))
                                 Button(
-                                    onClick = onNavigateToPremium,
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Mustard),
+                                    onClick = { onNavigateToLostMode(p.id) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Coral),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Ver planes Premium")
+                                    Text("Activar Modo Perdido")
                                 }
                             }
                         }
@@ -378,9 +397,21 @@ private fun InfoRow(label: String, value: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = AppColors.TextPrimary, textAlign = TextAlign.End)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppColors.TextSecondary,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppColors.TextPrimary,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1.4f)
+        )
     }
 }

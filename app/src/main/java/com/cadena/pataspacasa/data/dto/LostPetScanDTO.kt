@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class LostPetScanDTO(
+    val scanId: String? = null,
     val id: String? = null,
     val eventId: String? = null,
     val petId: String? = null,
@@ -18,9 +19,13 @@ data class LostPetScanDTO(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val locationDescription: String? = null,
-    val locationApprox: LocationApproxDTO? = null
+    val locationApprox: LocationApproxDTO? = null,
+    val source: String? = null,
+    val hasLocation: Boolean = false,
+    val visitorDeniedLocation: Boolean = false,
+    val pushEligible: Boolean = false
 ) {
-    fun resolvedId(): String = id ?: eventId ?: ""
+    fun resolvedId(): String = scanId ?: id ?: eventId ?: ""
     fun resolvedScannedAt(): String? = scannedAt ?: createdAt
 }
 
@@ -46,3 +51,9 @@ data class GetLostPetScansResponseDTO(
     // pagination support returned by backend
     val nextCursor: String? = null
 )
+
+@Serializable
+data class RestLostPetScansResponseDTO(val ok: Boolean, val scans: List<LostPetScanDTO>)
+
+@Serializable
+data class RestLostPetScanDetailResponseDTO(val ok: Boolean, val scan: LostPetScanDTO)

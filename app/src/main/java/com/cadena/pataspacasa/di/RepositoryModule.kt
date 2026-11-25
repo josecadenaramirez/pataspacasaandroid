@@ -1,11 +1,7 @@
 package com.cadena.pataspacasa.di
 
-import com.cadena.pataspacasa.data.datasource.CloudFunctionDataSource
-import com.cadena.pataspacasa.data.datasource.FirebaseAuthDataSource
 import com.cadena.pataspacasa.data.repository.*
-import com.cadena.pataspacasa.data.service.GooglePlayBillingService
 import com.cadena.pataspacasa.domain.repository.*
-import com.cadena.pataspacasa.domain.service.SubscriptionService
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -23,21 +19,18 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindPetRepository(impl: FirebasePetRepository): PetRepository
+    abstract fun bindPetRepository(impl: BackendPetRepository): PetRepository
 
     @Binds
     @Singleton
-    abstract fun bindTagRepository(impl: StubTagRepository): TagRepository
+    abstract fun bindTagRepository(impl: UnavailableLiveTagRepository): TagRepository
 
     @Binds
     @Singleton
-    abstract fun bindLostPetScanRepository(impl: FirebaseLostPetScanRepository): LostPetScanRepository
+    abstract fun bindLostPetScanRepository(impl: RestLostPetScanRepository): LostPetScanRepository
 
     @Binds
     @Singleton
-    abstract fun bindSubscriptionRepository(impl: SubscriptionRepositoryImpl): SubscriptionRepository
+    abstract fun bindBreedCatalogRepository(impl: BackendBreedCatalogRepository): BreedCatalogRepository
 
-    @Binds
-    @Singleton
-    abstract fun bindSubscriptionService(impl: GooglePlayBillingService): SubscriptionService
 }

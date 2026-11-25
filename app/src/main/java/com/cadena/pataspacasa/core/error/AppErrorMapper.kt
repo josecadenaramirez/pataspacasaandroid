@@ -1,35 +1,11 @@
 package com.cadena.pataspacasa.core.error
 
-import com.google.firebase.FirebaseNetworkException
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 
 object AppErrorMapper {
 
     fun from(throwable: Throwable): AppError {
         return when (throwable) {
             is AppError -> throwable
-            is FirebaseNetworkException -> AppError.NetworkUnavailable
-            is FirebaseAuthWeakPasswordException -> AppError.WeakPassword
-            is FirebaseAuthUserCollisionException -> AppError.EmailAlreadyInUse
-            is FirebaseAuthInvalidCredentialsException -> {
-                when (throwable.errorCode) {
-                    "ERROR_WRONG_PASSWORD", "ERROR_INVALID_CREDENTIAL" -> AppError.InvalidCredentials
-                    "ERROR_INVALID_EMAIL" -> AppError.InvalidCredentials
-                    else -> AppError.InvalidCredentials
-                }
-            }
-            is FirebaseAuthInvalidUserException -> {
-                when (throwable.errorCode) {
-                    "ERROR_USER_NOT_FOUND" -> AppError.UserNotFound
-                    "ERROR_USER_DISABLED" -> AppError.PermissionDenied
-                    else -> AppError.UserNotFound
-                }
-            }
-            is FirebaseAuthException -> AppError.Unknown(throwable.errorCode)
             else -> {
                 val message = throwable.message ?: "unknown"
                 when {

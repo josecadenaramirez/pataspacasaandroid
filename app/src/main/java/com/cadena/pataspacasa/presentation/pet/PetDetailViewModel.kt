@@ -23,7 +23,6 @@ sealed class PetDetailUiState {
 @HiltViewModel
 class PetDetailViewModel @Inject constructor(
     private val getPetDetailUseCase: GetPetDetailUseCase,
-    private val enableLostModeUseCase: EnableLostModeUseCase,
     private val disableLostModeUseCase: DisableLostModeUseCase,
     private val updatePetPhotoUseCase: UpdatePetPhotoUseCase
 ) : ViewModel() {
@@ -34,15 +33,13 @@ class PetDetailViewModel @Inject constructor(
     private val _isChangingLostMode = MutableStateFlow(false)
     val isChangingLostMode: StateFlow<Boolean> = _isChangingLostMode.asStateFlow()
 
-    private val _showPremiumUpsell = MutableStateFlow(false)
-    val showPremiumUpsell: StateFlow<Boolean> = _showPremiumUpsell.asStateFlow()
-
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private var petId: String = ""
 
     fun setPetId(id: String) {
+        if (petId == id && _uiState.value !is PetDetailUiState.Loading) return
         petId = id
         loadPet()
     }
@@ -61,27 +58,6 @@ class PetDetailViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.value = PetDetailUiState.Error(AppErrorMapper.from(e).userMessage)
-            }
-        }
-    }
-
-    fun enableLostMode() {
-        val pet = (uiState.value as? PetDetailUiState.Success)?.pet ?: return
-        if (!pet.canToggleLostMode) {
-            _showPremiumUpsell.value = true
-            return
-        }
-        _isChangingLostMode.value = true
-        viewModelScope.launch {
-            try {
-                val updatedPet = enableLostModeUseCase.execute(petId)
-                _uiState.value = PetDetailUiState.Success(updatedPet)
-            } catch (e: AppError) {
-                _errorMessage.value = e.userMessage
-            } catch (e: Exception) {
-                _errorMessage.value = AppErrorMapper.from(e).userMessage
-            } finally {
-                _isChangingLostMode.value = false
             }
         }
     }
@@ -115,6 +91,5 @@ class PetDetailViewModel @Inject constructor(
         }
     }
 
-    fun dismissPremiumUpsell() { _showPremiumUpsell.value = false }
     fun clearError() { _errorMessage.value = null }
 }

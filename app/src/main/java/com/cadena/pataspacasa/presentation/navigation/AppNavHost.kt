@@ -20,7 +20,8 @@ import com.cadena.pataspacasa.presentation.pet.lostmode.LostModeScreen
 import com.cadena.pataspacasa.presentation.pet.lostmode.LostPetScanDetailScreen
 import com.cadena.pataspacasa.presentation.pet.lostmode.LostPetScanHistoryScreen
 import com.cadena.pataspacasa.presentation.user.ProfileScreen
-import com.cadena.pataspacasa.presentation.user.PremiumScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.cadena.pataspacasa.domain.repository.SessionState
 
 @Composable
 fun AppNavHost(
@@ -29,6 +30,9 @@ fun AppNavHost(
     pendingLaunchIntent: LaunchIntent? = null,
     onLaunchIntentConsumed: () -> Unit = {}
 ) {
+    val sessionViewModel: SessionViewModel = hiltViewModel()
+    val sessionState by sessionViewModel.state.collectAsState()
+    var authenticatedUserId by remember { mutableStateOf<String?>(null) }
     var launchIntent by remember { mutableStateOf<LaunchIntent?>(null) }
     LaunchedEffect(pendingLaunchIntent) {
         if (pendingLaunchIntent != null) {
@@ -38,6 +42,22 @@ fun AppNavHost(
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route.orEmpty()
 
+    LaunchedEffect(sessionState) {
+        when (val session = sessionState) {
+            is SessionState.Authenticated -> authenticatedUserId = session.user.id
+            SessionState.Unauthenticated -> if (authenticatedUserId != null) {
+                authenticatedUserId = null
+                launchIntent = null
+                onLaunchIntentConsumed()
+                navController.navigate(LoginRoute) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            null -> Unit
+        }
+    }
+
     fun consumePendingAfterAuth() {
         val current = launchIntent ?: return
         when (current) {
@@ -45,6 +65,8 @@ fun AppNavHost(
             is LaunchIntent.LostPetScan -> navController.navigate(
                 LostPetScanDetailRoute(current.eventId, current.petId)
             )
+            is LaunchIntent.PetDetail -> navController.navigate(PetDetailRoute(current.petId))
+            LaunchIntent.Profile -> navController.navigate(ProfileRoute)
         }
         launchIntent = null
         onLaunchIntentConsumed()
@@ -97,10 +119,7 @@ fun AppNavHost(
         composable<RegisterRoute> {
             RegisterScreen(
                 onRegisterSuccess = {
-                    navController.navigate(HomeRoute) {
-                        popUpTo(LoginRoute) { inclusive = true }
-                    }
-                    consumePendingAfterAuth()
+                    navController.popBackStack()
                 },
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -132,8 +151,7 @@ fun AppNavHost(
                 onNavigateToLinkTag = { tagCode -> navController.navigate(LinkTagRoute(tagCode)) },
                 onNavigateToScanHistory = { petId, petName ->
                     navController.navigate(LostPetScanHistoryRoute(petId, petName))
-                },
-                onNavigateToPremium = { navController.navigate(PremiumRoute) }
+                }
             )
         }
 
@@ -141,15 +159,18 @@ fun AppNavHost(
             val route = backStackEntry.toRoute<EditPetRoute>()
             EditPetScreen(
                 petId = route.petId,
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToPremium = { navController.navigate(PremiumRoute) }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable<AddPetRoute> {
             AddPetScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToLinkTag = { tagCode -> navController.navigate(LinkTagRoute(tagCode)) }
+                onNavigateToPetDetail = { petId ->
+                    navController.navigate(PetDetailRoute(petId)) {
+                        popUpTo(AddPetRoute) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -203,12 +224,6 @@ fun AppNavHost(
                         popUpTo(HomeRoute) { inclusive = true }
                     }
                 }
-            )
-        }
-
-        composable<PremiumRoute> {
-            PremiumScreen(
-                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

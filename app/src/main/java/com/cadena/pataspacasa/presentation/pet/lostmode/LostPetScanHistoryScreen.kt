@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cadena.pataspacasa.domain.entity.LostPetScanEvent
@@ -33,7 +34,7 @@ fun LostPetScanHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historial — $petName") },
+                title = { Text("Historial — $petName", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
@@ -44,21 +45,23 @@ fun LostPetScanHistoryScreen(
         },
         containerColor = AppColors.BackgroundPrimary
     ) { paddingValues ->
-        when (val state = uiState) {
-            is LostPetScanHistoryUiState.Loading -> LoadingView("Cargando historial…")
-            is LostPetScanHistoryUiState.Error -> ErrorView(state.message, onRetry = { viewModel.load() })
-            is LostPetScanHistoryUiState.Empty -> EmptyStateView(
-                title = "Sin escaneos",
-                description = "No se han registrado escaneos de la placa aún."
-            )
-            is LostPetScanHistoryUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.scans, key = { it.id }) { scan ->
-                        ScanCard(scan = scan, onClick = { onNavigateToScanDetail(scan.id) })
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            when (val state = uiState) {
+                is LostPetScanHistoryUiState.Loading -> LoadingView("Cargando historial…")
+                is LostPetScanHistoryUiState.Error -> ErrorView(state.message, onRetry = { viewModel.load() })
+                is LostPetScanHistoryUiState.Empty -> EmptyStateView(
+                    title = "Sin escaneos",
+                    description = "No se han registrado escaneos de la placa aún."
+                )
+                is LostPetScanHistoryUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.scans, key = { it.id }) { scan ->
+                            ScanCard(scan = scan, onClick = { onNavigateToScanDetail(scan.id) })
+                        }
                     }
                 }
             }
@@ -76,7 +79,10 @@ private fun ScanCard(scan: LostPetScanEvent, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = AppColors.BackgroundSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(dateFormat.format(scan.scannedAt), style = MaterialTheme.typography.titleMedium)
+            Text(
+                scan.scannedAt?.let(dateFormat::format) ?: "No disponible",
+                style = MaterialTheme.typography.titleMedium
+            )
             if (!scan.locationDescription.isNullOrEmpty()) {
                 Text(scan.locationDescription, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
             }

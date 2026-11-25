@@ -5,7 +5,7 @@ import java.util.Date
 /**
  * Domain entity for a Pet.
  * Mirrors iOS Pet struct structure and computed properties.
- * Authority for permission decisions: Backend via isPremiumActive flag.
+ * Legacy plan fields are retained only for backend compatibility.
  */
 data class Pet(
     // MARK: - Identification
@@ -45,14 +45,10 @@ data class Pet(
     val nfcProgrammed: Boolean?,     // Whether NFC tag has been programmed
     val nfcProgrammedAt: Date?,
 
-    // MARK: - Plan / Subscription
-    val plan: PlanType = PlanType.BASIC,  // Informational plan type
-    /**
-     * Authority for premium permissions.
-     * Replaces any local plan/date logic. Only this flag decides access.
-     */
+    // MARK: - Legacy plan / subscription fields (informational only)
+    val plan: PlanType = PlanType.BASIC,
     val isPremiumActive: Boolean = false,
-    val paidUntil: Date?,            // Subscription expiration date
+    val paidUntil: Date?,
 
     // MARK: - Timestamps
     val createdAt: Date,

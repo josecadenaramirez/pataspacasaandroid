@@ -2,6 +2,13 @@ package com.cadena.pataspacasa.data.catalog
 
 import com.cadena.pataspacasa.domain.entity.PetSpecies
 
+/**
+ * Stable, app-bundled breed names used by the edit-pet form.
+ *
+ * Names and ordering mirror the static catalog documented with the iOS breed
+ * integration and are also the values persisted by the pet API. Keep this
+ * catalog local so an existing pet can be edited without a separate request.
+ */
 object BreedCatalog {
     private val dogBreeds = listOf(
         "Mestizo / Mixto",

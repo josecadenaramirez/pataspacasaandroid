@@ -1,5 +1,7 @@
 # Android Migration Progress — Patas pa' Casa
 
+> Historical migration record. Current REST parity status and verified blockers are in `ANDROID_IOS_PARITY_MATRIX.md` (2026-11-10).
+
 > Source of truth: iOS repository at `../pataspacasaios`  
 > Target: `../pataspacasaandroid`  
 > Architecture: Kotlin + Jetpack Compose + Material 3 + MVVM + Clean Architecture + Hilt + Firebase + Google Play Billing

@@ -65,18 +65,32 @@ class PetActivationTest {
 
     @Test
     fun `enableLostMode calls setLostMode on repository`() = runTest {
-        val expected = buildPet(isPremium = true, status = PetStatus.LOST)
+        val current = buildPet(isPremium = false, status = PetStatus.NORMAL)
+        val expected = current.copy(status = PetStatus.LOST)
+        coEvery { petRepository.getPet("pet1") } returns current
         coEvery { petRepository.setLostMode("pet1") } returns expected
         val result = enableLostModeUseCase.execute("pet1")
         assertTrue(result.isLost)
+        coVerify(exactly = 1) { petRepository.setLostMode("pet1") }
     }
 
     @Test
     fun `disableLostMode calls disableLostMode on repository`() = runTest {
-        val expected = buildPet(isPremium = true, status = PetStatus.NORMAL)
+        val expected = buildPet(isPremium = false, status = PetStatus.NORMAL)
         coEvery { petRepository.disableLostMode("pet1") } returns expected
         val result = disableLostModeUseCase.execute("pet1")
         assertFalse(result.isLost)
+        coVerify(exactly = 1) { petRepository.disableLostMode("pet1") }
+    }
+
+    @Test
+    fun `legacy premium state does not change lost mode access`() = runTest {
+        val current = buildPet(isPremium = true, status = PetStatus.NORMAL)
+        coEvery { petRepository.getPet("pet1") } returns current
+        coEvery { petRepository.setLostMode("pet1") } returns current.copy(status = PetStatus.LOST)
+
+        assertTrue(enableLostModeUseCase.execute("pet1").isLost)
+        coVerify(exactly = 1) { petRepository.setLostMode("pet1") }
     }
 
     @Test

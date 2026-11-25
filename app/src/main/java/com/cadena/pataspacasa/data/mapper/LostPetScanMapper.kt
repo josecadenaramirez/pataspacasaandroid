@@ -9,7 +9,7 @@ object LostPetScanMapper {
         // Resolve id and timestamp from either legacy Android keys or backend/iOS keys
         val resolvedId = dto.resolvedId()
         val rawDate = dto.resolvedScannedAt()
-        val parsedDate = rawDate?.let { PetMapper.parseIso8601(it) } ?: Date()
+        val parsedDate = rawDate?.let { PetMapper.parseIso8601(it) }
 
         // Resolve coordinates: prefer direct latitude/longitude, fall back to nested locationApprox
         val lat = dto.latitude ?: dto.locationApprox?.latitude
@@ -22,7 +22,13 @@ object LostPetScanMapper {
             scannedAt = parsedDate,
             latitude = lat,
             longitude = lon,
-            locationDescription = dto.locationDescription
+            locationDescription = dto.locationDescription,
+            tagId = dto.tagId.orEmpty(),
+            source = dto.source.orEmpty(),
+            hasLocation = dto.hasLocation,
+            accuracyMeters = dto.locationApprox?.accuracyMeters,
+            visitorDeniedLocation = dto.visitorDeniedLocation,
+            pushEligible = dto.pushEligible
         )
     }
 }

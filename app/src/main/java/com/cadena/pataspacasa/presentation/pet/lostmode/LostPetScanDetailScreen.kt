@@ -1,6 +1,8 @@
 package com.cadena.pataspacasa.presentation.pet.lostmode
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -15,6 +17,9 @@ import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
 import java.text.SimpleDateFormat
 import java.util.*
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +50,10 @@ fun LostPetScanDetailScreen(
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when (val s = uiState) {
                 is LostPetScanDetailUiState.Loading -> LoadingView("Cargando…")
-                is LostPetScanDetailUiState.Error -> ErrorView(s.message)
+                is LostPetScanDetailUiState.Error -> ErrorView(
+                    s.message,
+                    onRetry = { viewModel.load(eventId, petId) }
+                )
                 is LostPetScanDetailUiState.Success -> ScanDetailContent(scan = s.scan)
             }
         }
@@ -55,19 +63,25 @@ fun LostPetScanDetailScreen(
 @Composable
 private fun ScanDetailContent(scan: LostPetScanEvent) {
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy, HH:mm:ss", Locale("es", "MX")) }
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("📡", style = MaterialTheme.typography.displaySmall, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
 
         SectionCard("Fecha y hora") {
-            Text(dateFormat.format(scan.scannedAt), style = MaterialTheme.typography.bodyMedium)
+            Text(scan.scannedAt?.let(dateFormat::format) ?: "No disponible", style = MaterialTheme.typography.bodyMedium)
         }
 
-        if (scan.latitude != null && scan.longitude != null) {
+        if (scan.visitorDeniedLocation) {
+            SectionCard("Ubicación") {
+                Text("La persona que escaneó decidió no compartir su ubicación.", color = AppColors.TextSecondary)
+            }
+        } else if (scan.hasLocation && scan.latitude != null && scan.longitude != null) {
             SectionCard("Ubicación aproximada") {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Latitud: ${scan.latitude}", style = MaterialTheme.typography.bodyMedium)
@@ -75,7 +89,20 @@ private fun ScanDetailContent(scan: LostPetScanEvent) {
                     if (!scan.locationDescription.isNullOrEmpty()) {
                         Text(scan.locationDescription, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
                     }
+                    scan.accuracyMeters?.let {
+                        Text("Precisión aproximada: ~${it.toInt()} metros", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    PrimaryButton(title = "Ver en Maps", onClick = {
+                        val uri = Uri.parse("geo:${scan.latitude},${scan.longitude}?q=${scan.latitude},${scan.longitude}")
+                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                        if (intent.resolveActivity(context.packageManager) != null) context.startActivity(intent)
+                    })
                 }
+            }
+        } else {
+            SectionCard("Ubicación") {
+                Text("No se compartió información de ubicación.", color = AppColors.TextSecondary)
             }
         }
     }

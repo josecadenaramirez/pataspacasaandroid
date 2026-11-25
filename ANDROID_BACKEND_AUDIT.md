@@ -1,5 +1,7 @@
 # Android ↔ Backend Audit
 
+> Superseded on 2026-11-10 by `ANDROID_IOS_PARITY_MATRIX.md`. The table below describes the obsolete Firebase Callable implementation and must not be used as current runtime documentation.
+
 Feature | iOS function | Android function | Request parity | Response parity | Status | Notes
 ---|---|---|---|---|---|---
 Home / List Pets | getMyPets (callable) | getMyPets (callable) | ✅ tokens payload | ✅ pets array expected | ✅ verified (serialization fix applied) | Previously Android serialized Firebase result using kotlinx.serialization on Map<String, Any> causing "Serializer for class 'Any'". Replaced with safe conversion to JsonElement.

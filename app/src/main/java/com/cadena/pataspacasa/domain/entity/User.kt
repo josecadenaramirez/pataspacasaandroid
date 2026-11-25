@@ -14,9 +14,8 @@ data class User(
     val role: String? = null,
 
     /**
-     * Subscribed plan type — informational only.
-     * ⚠️ DO NOT use for access control.
-     * Permission authority is per-pet via pet.isPremiumActive.
+     * Legacy plan type retained only for backend compatibility.
+     * It must not be used for access control.
      */
     val plan: PlanType,
 
@@ -40,10 +39,7 @@ data class User(
         }
 
     /**
-     * Whether subscribed to premium plan.
-     * ⚠️ This does NOT guarantee active permissions.
-     * A plan can be .premium but expired → pet.isPremiumActive == false.
-     * Use only for UI info (premium badge, plan display, etc).
+     * Legacy subscription state. It must not control product access.
      */
     val hasPremiumPlan: Boolean
         get() = plan == PlanType.PREMIUM
@@ -54,7 +50,7 @@ data class User(
         get() = plan
 
     @Deprecated(
-        "Does not determine effective permissions. Use pet.isPremiumActive.",
+        "Legacy subscription state; do not use it for product access.",
         replaceWith = ReplaceWith("hasPremiumPlan")
     )
     val isPremium: Boolean

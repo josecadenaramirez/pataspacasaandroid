@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 sealed class HomeUiState {
@@ -34,13 +35,10 @@ class HomeViewModel @Inject constructor(
 
     private val _userName = MutableStateFlow("")
     val userName: StateFlow<String> = _userName.asStateFlow()
+    private var fetchJob: Job? = null
 
     val firstName: String
         get() = _userName.value.split(" ").firstOrNull() ?: _userName.value
-
-    init {
-        loadData()
-    }
 
     fun loadData() {
         resolveUserName()
@@ -55,18 +53,23 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun fetchPets() {
+        fetchJob?.cancel()
+        val userId = authRepository.currentUser()?.id
         _uiState.value = HomeUiState.Loading
-        viewModelScope.launch {
+        fetchJob = viewModelScope.launch {
             try {
                 val pets = getPetsUseCase.execute()
+                if (userId != authRepository.currentUser()?.id) return@launch
                 _uiState.value = if (pets.isEmpty()) HomeUiState.Empty else HomeUiState.Success(pets)
             } catch (e: AppError) {
+                if (userId != authRepository.currentUser()?.id) return@launch
                 _uiState.value = when (e) {
                     is AppError.NotAuthenticated, is AppError.SessionExpired -> HomeUiState.Unauthorized
                     is AppError.NetworkUnavailable -> HomeUiState.Offline
                     else -> HomeUiState.Error(e.userMessage)
                 }
             } catch (e: Exception) {
+                if (userId != authRepository.currentUser()?.id) return@launch
                 val appError = AppErrorMapper.from(e)
                 _uiState.value = when (appError) {
                     is AppError.NotAuthenticated, is AppError.SessionExpired -> HomeUiState.Unauthorized

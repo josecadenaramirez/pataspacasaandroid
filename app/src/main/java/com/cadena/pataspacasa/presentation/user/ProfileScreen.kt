@@ -1,8 +1,10 @@
 package com.cadena.pataspacasa.presentation.user
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -10,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cadena.pataspacasa.presentation.theme.AppColors
@@ -92,11 +95,11 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(24.dp))
-
             // Avatar
             Surface(
                 shape = CircleShape,
@@ -109,13 +112,24 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(12.dp))
-            Text(userName, style = MaterialTheme.typography.headlineSmall)
-            Text(email, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
+            Text(
+                userName,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Text(
+                email,
+                style = MaterialTheme.typography.bodySmall,
+                color = AppColors.TextSecondary,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
             Spacer(Modifier.height(24.dp))
 
             // Settings list
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     "Cuenta",
                     style = MaterialTheme.typography.labelMedium,
@@ -123,27 +137,19 @@ fun ProfileScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
                 Card(
+                    onClick = { showPasswordResetConfirm = true },
+                    enabled = !isProcessing && email.isNotEmpty(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = AppColors.BackgroundSurface)
                 ) {
                     ListItem(
                         headlineContent = { Text("Cambiar contraseña") },
-                        modifier = Modifier.padding(0.dp),
+                        supportingContent = { Text("Recibe un enlace seguro por correo") },
                         colors = ListItemDefaults.colors(containerColor = AppColors.BackgroundSurface),
                         trailingContent = {
                             if (isProcessing) CircularProgressIndicator(Modifier.size(18.dp), color = AppColors.Primary, strokeWidth = 2.dp)
                         }
                     )
-                    HorizontalDivider(color = AppColors.Divider)
-                    // Clickable
-                    TextButton(
-                        onClick = { showPasswordResetConfirm = true },
-                        modifier = Modifier.fillMaxWidth().padding(0.dp),
-                        enabled = !isProcessing && email.isNotEmpty(),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AppColors.TextPrimary)
-                    ) {
-                        Text("Cambiar contraseña", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth())
-                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -156,18 +162,22 @@ fun ProfileScreen(
                 )
 
                 Card(
+                    onClick = { showLogoutConfirm = true },
+                    enabled = !isProcessing,
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = AppColors.BackgroundSurface)
+                    colors = CardDefaults.cardColors(containerColor = AppColors.Error.copy(alpha = 0.08f))
                 ) {
-                    TextButton(
-                        onClick = { showLogoutConfirm = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isProcessing,
-                        colors = ButtonDefaults.textButtonColors(contentColor = AppColors.Error)
-                    ) {
-                        Text("Cerrar sesión", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth())
-                    }
+                    Text(
+                        "Cerrar sesión",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = AppColors.Error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                    )
                 }
+
+                Spacer(Modifier.height(16.dp))
             }
         }
     }

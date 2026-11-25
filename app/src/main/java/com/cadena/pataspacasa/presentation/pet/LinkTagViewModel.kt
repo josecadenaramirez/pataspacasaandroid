@@ -2,6 +2,7 @@ package com.cadena.pataspacasa.presentation.pet
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cadena.pataspacasa.core.config.AppConfiguration
 import com.cadena.pataspacasa.core.error.AppError
 import com.cadena.pataspacasa.core.error.AppErrorMapper
 import com.cadena.pataspacasa.domain.entity.Pet
@@ -43,7 +44,9 @@ class LinkTagViewModel @Inject constructor(
         if (input.isEmpty()) return
 
         val tagCode = TagCodeParser.parse(input) ?: run {
-            _step.value = LinkTagStep.Failure("Ingresa un ID válido o un enlace exacto de https://qa.pataspacasa.com/p/aBc123")
+            _step.value = LinkTagStep.Failure(
+                "Ingresa un ID válido o un enlace exacto como ${AppConfiguration.examplePetUrl()}"
+            )
             return
         }
 

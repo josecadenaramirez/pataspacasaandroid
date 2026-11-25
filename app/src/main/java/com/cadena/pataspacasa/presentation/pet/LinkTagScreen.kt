@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.cadena.pataspacasa.core.config.AppConfiguration
 import com.cadena.pataspacasa.presentation.common.*
 import com.cadena.pataspacasa.presentation.theme.AppColors
 
@@ -62,6 +63,7 @@ fun LinkTagScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .imePadding()
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -93,7 +95,7 @@ fun LinkTagScreen(
                             label = "Enlace o código",
                             value = tagInput,
                             onValueChange = viewModel::onTagInputChange,
-                            placeholder = "Ej. aBc123 o https://pataspacasa.com/p/aBc123"
+                            placeholder = "Ej. aBc123 o ${AppConfiguration.examplePetUrl()}"
                         )
 
                         PrimaryButton(
@@ -110,6 +112,7 @@ fun LinkTagScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)

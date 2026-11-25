@@ -26,4 +26,21 @@ class TagCodeParserTest {
     fun `rejects unsupported route`() {
         assertNull(TagCodeParser.parse("https://pataspacasa.com/scan/aBc123"))
     }
+
+    @Test
+    fun `accepts claim universal link`() {
+        assertEquals("AbC123", TagCodeParser.parse("https://pataspacasa.com/claim/AbC123"))
+    }
+
+    @Test
+    fun `accepts exact custom scheme`() {
+        assertEquals("AbC123", TagCodeParser.parse("pataspacasa://tag/AbC123"))
+    }
+
+    @Test
+    fun `rejects query fragment and trailing slash`() {
+        assertNull(TagCodeParser.parse("https://qa.pataspacasa.com/p/AbC123?x=1"))
+        assertNull(TagCodeParser.parse("https://qa.pataspacasa.com/p/AbC123#x"))
+        assertNull(TagCodeParser.parse("https://qa.pataspacasa.com/p/AbC123/"))
+    }
 }

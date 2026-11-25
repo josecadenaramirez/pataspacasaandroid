@@ -47,6 +47,8 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.BackgroundPrimary)
+            .safeDrawingPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -101,7 +103,7 @@ fun LoginScreen(
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
                             if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = null
+                            contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
                         )
                     }
                 }
@@ -127,7 +129,7 @@ fun LoginScreen(
         Spacer(Modifier.height(32.dp))
 
         // Register link
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("¿No tienes cuenta?", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
             TextButton(onClick = onNavigateToRegister) {
                 Text("Regístrate", color = AppColors.Primary, style = MaterialTheme.typography.labelLarge)

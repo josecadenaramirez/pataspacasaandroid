@@ -17,6 +17,10 @@ object TagCodeParser {
         if (validTagRegex.matches(value)) return value
 
         val uri = runCatching { URI(value) }.getOrNull() ?: return null
+        if (uri.scheme?.lowercase() == "pataspacasa" && uri.host?.lowercase() == "tag") {
+            val segments = uri.path.orEmpty().split('/').filter { it.isNotEmpty() }
+            return segments.singleOrNull()?.takeIf(validTagRegex::matches)
+        }
         if (uri.scheme?.lowercase() != "https") return null
         val host = uri.host?.lowercase() ?: return null
         if (host !in allowedHosts) return null
@@ -25,7 +29,7 @@ object TagCodeParser {
         val path = uri.path ?: return null
         val segments = path.split('/').filter { it.isNotEmpty() }
         if (segments.size != 2) return null
-        if (segments[0] != "p") return null
+        if (segments[0] != "p" && segments[0] != "claim") return null
         if (path.endsWith("/")) return null
         val code = segments[1]
         return if (validTagRegex.matches(code)) code else null

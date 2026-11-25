@@ -10,8 +10,12 @@ import androidx.core.app.NotificationCompat
 import com.cadena.pataspacasa.MainActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PatasFcmService : FirebaseMessagingService() {
+    @Inject lateinit var pushRegistrationManager: PushRegistrationManager
 
     companion object {
         const val CHANNEL_ID = "patas_notifications"
@@ -27,7 +31,7 @@ class PatasFcmService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        // TODO: Send token to backend when user is authenticated
+        pushRegistrationManager.register(token)
     }
 
     private fun createNotificationChannel() {

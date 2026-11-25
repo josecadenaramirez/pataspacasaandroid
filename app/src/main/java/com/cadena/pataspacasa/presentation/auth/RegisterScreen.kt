@@ -30,6 +30,7 @@ fun RegisterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
 
     uiState.error?.let { error ->
         AlertDialog(
@@ -62,6 +63,7 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -110,7 +112,23 @@ fun RegisterScreen(
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
                                 if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = null
+                                contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                            )
+                        }
+                    }
+                )
+                AppTextField(
+                    label = "Confirmar contraseña",
+                    value = uiState.confirmPassword,
+                    onValueChange = viewModel::onConfirmPasswordChange,
+                    placeholder = "Repite tu contraseña",
+                    errorMessage = uiState.confirmPasswordError,
+                    isPassword = !showConfirmPassword,
+                    trailingIcon = {
+                        IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
+                            Icon(
+                                if (showConfirmPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showConfirmPassword) "Ocultar contraseña" else "Mostrar contraseña"
                             )
                         }
                     }
@@ -132,7 +150,7 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("¿Ya tienes cuenta?", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
                 TextButton(onClick = onNavigateBack) {
                     Text("Inicia sesión", color = AppColors.Primary, style = MaterialTheme.typography.labelLarge)

@@ -2,15 +2,20 @@ package com.cadena.pataspacasa
 
 import com.cadena.pataspacasa.data.catalog.BreedCatalog
 import com.cadena.pataspacasa.domain.entity.PetSpecies
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BreedCatalogTest {
     @Test
-    fun `dog and cat catalogs are non-empty and ordered`() {
+    fun `bundled catalogs preserve species labels and order`() {
         val dogs = BreedCatalog.breedsFor(PetSpecies.DOG)
         val cats = BreedCatalog.breedsFor(PetSpecies.CAT)
-        assertTrue(dogs.first() == "Mestizo / Mixto")
-        assertTrue(cats.first() == "Mestizo / Doméstico")
+
+        assertEquals("Mestizo / Mixto", dogs.first())
+        assertEquals("Xoloitzcuintle", dogs.last())
+        assertEquals("Mestizo / Doméstico", cats.first())
+        assertEquals("Turkish Van", cats.last())
+        assertTrue(BreedCatalog.breedsFor(PetSpecies.OTHER).isEmpty())
     }
 }

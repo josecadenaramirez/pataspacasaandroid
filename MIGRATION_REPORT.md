@@ -1,5 +1,7 @@
 # Migration Report — Patas pa' Casa iOS → Android
 
+> Historical report; several original completeness claims were invalidated by runtime review. Use `ANDROID_IOS_PARITY_MATRIX.md` for the current evidence-based status.
+
 **Date:** 2026-09-30  
 **Source:** `../pataspacasaios` (iOS, SwiftUI)  
 **Target:** `../pataspacasaandroid` (Android, Jetpack Compose)  
